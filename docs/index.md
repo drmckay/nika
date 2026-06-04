@@ -28,7 +28,7 @@ If you want to quickly get started with Nika, follow the [Installation Guide](./
 ### Tool Workflow
 
 <div align="center">
-  <img src="./assets/nika_workflow.png" width="900" style="border-radius:20px;">
+  <img src="./assets/nika-workflow.jpeg" width="900" style="border-radius:20px;">
 </div>
 
 * The source code repository is first processed to generate a **Code Property Graph (CPG)**, which provides a unified representation of the code structure, control flow, and data flow for analysis.
