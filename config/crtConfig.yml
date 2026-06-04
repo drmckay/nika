@@ -1,7 +1,7 @@
 LLMConfig:
   API_KEY: 'API_TOKEN'
   LLM_URL: 'https://chatgpt.com/api/v1'
-  MODEL: 'global:LLM_GLOBAL_GPT_5_STG'
+  MODEL: 'GPT_5'
   MAX_TOOL_CALLS: 10
   MAX_ITERATIONS: 15
   RECURSION_LIMIT: 100

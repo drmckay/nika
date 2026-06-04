@@ -54,10 +54,12 @@ At a high level, Nika follows this analysis flow:
 You can use pre-built docker images.
 
 ```bash
+git clone https://github.com/PhonePe/nika.git
 docker pull ghcr.io/phonepe/nika:latest
 export NIKA_IMAGE=ghcr.io/phonepe/nika
 ./run.sh --path /absolute/path/to/code --config /absolute/path/to/crtConfig.yml --output ./report.html
 ```
+> You still need to clone the repository after pulling the image, since `run.sh` makes it easier to run Nika by handling multiple mounts for you.
 
 or build a docker image yourself.
 
