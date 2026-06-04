@@ -1,0 +1,9 @@
+.md-typeset table {
+    border-collapse: collapse;
+}
+
+.md-typeset table th,
+.md-typeset table td {
+    border: 0.6px solid #444;
+    padding: 8px 12px;
+}
