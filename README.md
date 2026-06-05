@@ -105,3 +105,20 @@ To know more about Nika and it's features, you can read our detailed documentati
 ## Language Support
 
 Java is the only fully supported language today; support for other languages remains planned.
+
+## Contributors
+
+<p align="center">
+  <a href="https://github.com/PhonePe/nika/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=PhonePe/nika" alt="Automated Contributors" />
+  </a>
+  <a href="https://github.com/pachinko2821">
+    <img src="https://avatars.githubusercontent.com/pachinko2821?s=64" width="64" height="64" alt="pachinko2821" />
+  </a>
+  <a href="https://github.com/wisdomfreak-1">
+    <img src="https://avatars.githubusercontent.com/wisdomfreak-1?s=64" width="64" height="64" alt="wisdomfreak-1" />
+  </a>
+  <a href="https://github.com/riti-ka-7">
+    <img src="https://avatars.githubusercontent.com/riti-ka-7?s=64" width="64" height="64" alt="riti-ka-7" />
+  </a>
+</p>
