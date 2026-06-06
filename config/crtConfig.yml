@@ -24,6 +24,8 @@ vulnerabilityConfig:
    - cryptographic_failure
    - unsafe_reflection
    - xxe
+   - ldap_injection
+   - xpath_injection
 
 sources:
   annotations:

@@ -16,7 +16,7 @@ from vulnerabilities.template_injection import TemplateInjectionVulnerability
 from vulnerabilities.unsafe_reflection import UnsafeReflectionVulnerability
 from vulnerabilities.xpath_injection import XpathInjectionVulnerability
 from vulnerabilities.xxe import XxeVulnerability
-
+from vulnerabilities.ldap_injection import LdapInjectionVulnerability
 
 class _EngineEntry:
     __slots__ = ("factory", "requires_path")
@@ -67,6 +67,7 @@ def build_default_registry():
     registry.register_vulnerability("sql_injection", SqlInjectionVulnerability)
     registry.register_vulnerability("ssrf", SsrfVulnerability)
     registry.register_vulnerability("open_redirect", OpenRedirectVulnerability)
+    registry.register_vulnerability("ldap_injection", LdapInjectionVulnerability)
     registry.register_vulnerability("xpath_injection", XpathInjectionVulnerability)
     registry.register_vulnerability("xxe", XxeVulnerability)
     registry.register_vulnerability("path_traversal", PathTraversalVulnerability)
