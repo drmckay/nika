@@ -6,6 +6,7 @@ from vulnerabilities.code_injection import CodeInjectionVulnerability
 from vulnerabilities.command_injection import CommandInjectionVulnerability
 from vulnerabilities.deserialization import DeserializationVulnerability
 from vulnerabilities.insecure_crypto import InsecureCryptoVulnerability
+from vulnerabilities.open_redirect import OpenRedirectVulnerability
 from vulnerabilities.order_scan import OrderScanVulnerability
 from vulnerabilities.path_traversal import PathTraversalVulnerability
 from vulnerabilities.sensitive_logging.vulnerability import SensitiveLoggingVulnerability
@@ -64,6 +65,7 @@ def build_default_registry():
     registry.register_vulnerability("sensitive_logging", SensitiveLoggingVulnerability)
     registry.register_vulnerability("sql_injection", SqlInjectionVulnerability)
     registry.register_vulnerability("ssrf", SsrfVulnerability)
+    registry.register_vulnerability("open_redirect", OpenRedirectVulnerability)
     registry.register_vulnerability("xxe", XxeVulnerability)
     registry.register_vulnerability("path_traversal", PathTraversalVulnerability)
     registry.register_vulnerability("command_injection", CommandInjectionVulnerability)
