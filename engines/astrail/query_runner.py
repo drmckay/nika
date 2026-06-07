@@ -193,6 +193,11 @@ def execute_once = {{
             "--exclude",
             "lib/**"
         ]
+
+        for jar_path in astrail_config.get("inference_jar_paths", []) or []:
+            if jar_path:
+                cmd.extend(["--inference-jar-paths", str(jar_path)])
+
         command_result = execute_command(cmd)
         logging.info("CPG generation duration: %s seconds", command_result.duration_sec)
         if not command_result.ok or not os.path.exists(output_cpg_path):
