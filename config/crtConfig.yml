@@ -38,6 +38,16 @@ sources:
 vulnerabilityArgs:
   sensitive_logging:
     pii_keywords: ["private", "privateKey", "username", "password"]
+  idor:
+    identifier_params:
+      - "userId"
+      - "accountId"
+      - "customerId"
+      - "orderId"
+      - "memberId"
+      - "profileId"
+      - "walletId"
+    include_query_params: false
 
 tools:
   astrail:
