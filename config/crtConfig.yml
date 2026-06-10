@@ -24,6 +24,7 @@ vulnerabilityConfig:
    - cryptographic_failure
    - unsafe_reflection
    - xxe
+   - idor
 
 sources:
   annotations:
@@ -47,7 +48,37 @@ vulnerabilityArgs:
       - "memberId"
       - "profileId"
       - "walletId"
-    include_query_params: false
+      - "documentId"
+      - "invoiceId"
+      - "resourceId"
+    match_generic_id: true
+    include_query_params: true
+    detect_request_body: true
+    request_body_annotations: ["RequestBody"]
+    ownership_check_functions:
+      - { name: "checkUserOwnership", resource: "userId" }
+      - { name: "checkOrderOwnership", resource: "orderId" }
+    ownership_check_annotations: ["PreAuthorize", "PostAuthorize", "PreFilter", "PostFilter"]
+    auto_detect_ownership: true
+    principal_markers:
+      - "SecurityContextHolder"
+      - "getAuthentication"
+      - "getPrincipal"
+      - "getCurrentUser"
+      - "getCurrentUserId"
+      - "currentUser"
+      - "loggedInUser"
+      - "getUserPrincipal"
+      - "getRemoteUser"
+    principal_types:
+      - "java.security.Principal"
+      - "org.springframework.security.core.Authentication"
+      - "org.springframework.security.core.userdetails.UserDetails"
+    principal_annotations:
+      - "AuthenticationPrincipal"
+    ownership_requires_identifier_param: true
+    require_ownership_comparison: true
+    exclude_when_ownership_found: true
 
 tools:
   astrail:
