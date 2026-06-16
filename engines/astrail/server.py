@@ -81,7 +81,8 @@ class AstrailServer:
             raise FileNotFoundError(f"CPG path does not exist: {self.__cpg_path}")
 
         env = os.environ.copy()
-        env.setdefault("JAVA_OPTS", DEFAULT_JOERN_JAVA_OPTS)
+        astrail_java_opts = astrail_cfg.get("javaopts", DEFAULT_JOERN_JAVA_OPTS)
+        env.setdefault("JAVA_OPTS", astrail_java_opts)
 
         self.__port = port
         self.__log_file = self._build_log_file_path(port)
