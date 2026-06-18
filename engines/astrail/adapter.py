@@ -76,6 +76,13 @@ class AstrailEngine:
 
         return translate_batch_reachability(batch_result)
 
+    def resolve_constant_args(self, context, locations):
+        raw = self._get_query_runner().run_const_arg_resolution(locations)
+        resolved = {}
+        for entry in raw or []:
+            resolved[(entry.get("file"), entry.get("line"))] = list(entry.get("values") or [])
+        return resolved
+
     def find_ownership_protected(
         self,
         endpoint_symbols,

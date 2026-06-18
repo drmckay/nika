@@ -1,0 +1,43 @@
+rules:
+- id: insecure-random-instantiation
+  patterns:
+  - pattern-either:
+    - pattern: new java.util.Random(...)
+    - pattern: new Random(...)
+  message: >-
+    Use of java.util.Random for a potentially security-sensitive value. Use
+    java.security.SecureRandom instead.
+  severity: ERROR
+  languages: [java]
+  metadata:
+    category: security
+    cwe: 'CWE-330: Use of Insufficiently Random Values'
+    confidence: MEDIUM
+- id: insecure-math-random
+  patterns:
+  - pattern-either:
+    - pattern: Math.random()
+    - pattern: java.lang.Math.random()
+  message: >-
+    Use of Math.random(), which is not cryptographically secure. Use
+    java.security.SecureRandom for security-sensitive values.
+  severity: ERROR
+  languages: [java]
+  metadata:
+    category: security
+    cwe: 'CWE-330: Use of Insufficiently Random Values'
+    confidence: MEDIUM
+- id: insecure-threadlocalrandom
+  patterns:
+  - pattern-either:
+    - pattern: java.util.concurrent.ThreadLocalRandom.current()
+    - pattern: ThreadLocalRandom.current()
+  message: >-
+    Use of ThreadLocalRandom, which is not cryptographically secure. Use
+    java.security.SecureRandom for security-sensitive values.
+  severity: ERROR
+  languages: [java]
+  metadata:
+    category: security
+    cwe: 'CWE-330: Use of Insufficiently Random Values'
+    confidence: LOW
