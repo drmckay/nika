@@ -1,6 +1,34 @@
-# Nika
+
 
 ![Nika](assets/nika.png)
+
+<div align="center">
+
+### Catch vulnerabilities that hide across files.
+
+<em>A free, open-source Java SAST that traces untrusted data from source to sink across files.</em>
+
+<br/>
+
+![License](https://img.shields.io/github/license/PhonePe/nika?style=for-the-badge&color=FFFFFF&labelColor=555555&logoColor=FFFFFF)
+![Stars](https://img.shields.io/github/stars/PhonePe/nika?style=for-the-badge&logo=github&logoColor=FFFFFF&color=FFFFFF&labelColor=555555)
+![Open issues](https://img.shields.io/github/issues/PhonePe/nika?style=for-the-badge&color=FFFFFF&labelColor=555555)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-FFFFFF?style=for-the-badge&labelColor=555555)
+
+<br/>
+
+[![Join Discord](assets/join-discord.svg)](https://discord.com/invite/PrTJ5Hubfm)
+&nbsp;
+[![Read the Docs](assets/read-the-docs.svg)](https://phonepe.github.io/nika/)
+
+<br/>
+
+**[Quick Start](#quick-start)** · **[Why Nika](#why-nika)** · **[Detection Coverage](#detection-coverage)** · **[How It Works](#how-nika-works)** · **[Docs](https://phonepe.github.io/nika/)**
+
+<br/>
+
+</div>
+
 
 Nika is an open-source source code review and static analysis tool for security engineers who need to identify exploit paths in Java microservices. It performs cross-file taint analysis to trace attacker-controlled input across application layers and determine whether that input reaches a security-sensitive sink.
 
