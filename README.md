@@ -4,9 +4,9 @@
 
 <div align="center">
 
-### Catch vulnerabilities that hide across files.
+### Automated security code scanning featuring optional AI exploitability analysis.
 
-<em>A free, open-source Java SAST that traces untrusted data from source to sink across files.</em>
+<em>One of the **FIRST** open-source secure code scanners with cross-file taint analysis for Java micro-services.</em>
 
 <br/>
 
@@ -29,8 +29,21 @@
 
 </div>
 
+> [!Fun Fact]
+> The name Nika actually comes from the anime One Piece.
+
+
 
 Nika is an open-source source code review and static analysis tool for security engineers who need to identify exploit paths in Java microservices. It performs cross-file taint analysis to trace attacker-controlled input across application layers and determine whether that input reaches a security-sensitive sink.
+
+### Key Capabilities
+
+- **Cross-file taint analysis**
+- **AI exploitability analysis**
+- **Branch-aware scanning**
+- **Customizable rules**
+
+![Nika SAST report preview](assets/nika-report-preview.png)
 
 ## Why Nika
 
