@@ -41,9 +41,6 @@ def _get_config():
     return ConfigProvider.get_config()
 
 
-_SECURITY_AGENT_CHECKPOINTER = InMemorySaver()
-
-
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
     iteration_count: int
@@ -132,7 +129,7 @@ class SecurityAgent:
         workflow.add_edge(START, "agent")
         workflow.add_conditional_edges("agent", self._should_continue)
         workflow.add_edge("tools", "agent")
-        return workflow.compile(checkpointer=_SECURITY_AGENT_CHECKPOINTER)
+        return workflow.compile(checkpointer=InMemorySaver())
 
     def _normalize_path(self, filename: str) -> str:
         if os.path.isabs(filename):
