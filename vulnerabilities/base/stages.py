@@ -121,8 +121,10 @@ def _single_matching_sink_for_trace(sinks, trace):
 
 def _enrich_trace_for_review(trace, sinks, sources):
     source_lookup = _source_lookup(sources)
-    source = source_lookup.get(getattr(trace, "source_symbol", None))
-    sink = _single_matching_sink_for_trace(sinks, trace)
+    source = getattr(trace, "source", None) or source_lookup.get(
+        getattr(trace, "source_symbol", None)
+    )
+    sink = getattr(trace, "sink", None) or _single_matching_sink_for_trace(sinks, trace)
     return trace.model_copy(update={"source": source, "sink": sink})
 
 
@@ -232,6 +234,19 @@ def _format_sink_evidence(sink, trace):
     ]
     if metadata.get("sink_kind"):
         lines.append(f"Sink kind: {metadata.get('sink_kind')}")
+    if metadata.get("source_param"):
+        source_text = metadata.get("source_param")
+        if metadata.get("source_kind"):
+            source_text = f"{metadata.get('source_kind')} {source_text}"
+        lines.append(f"Source parameter: {source_text}")
+    if metadata.get("sink_argument"):
+        lines.append(f"Sink argument: {metadata.get('sink_argument')}")
+    if metadata.get("flow_summary"):
+        lines.append(f"Flow summary: {metadata.get('flow_summary')}")
+    if metadata.get("validation_evidence"):
+        lines.append(f"Validation evidence: {metadata.get('validation_evidence')}")
+    if metadata.get("flow_confidence"):
+        lines.append(f"Flow confidence: {metadata.get('flow_confidence')}")
     if metadata.get("confidence"):
         lines.append(f"Rule confidence: {metadata.get('confidence')}")
     if sink.code:
@@ -345,6 +360,9 @@ def _api_path_metadata(trace, source_lookup):
 
 def _trace_finding_metadata(sink, trace, source_lookup):
     metadata = dict(getattr(sink, "metadata", None) or {})
+    trace_sink = getattr(trace, "sink", None)
+    if trace_sink is not None:
+        metadata.update(getattr(trace_sink, "metadata", None) or {})
     if getattr(sink, "rule_id", None):
         metadata.setdefault("rule_id", sink.rule_id)
     metadata.update(_api_path_metadata(trace, source_lookup))
