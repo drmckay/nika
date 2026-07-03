@@ -136,6 +136,54 @@ def _body_before_sink(body: str, sink_code: str) -> str:
     return body[:idx] if idx >= 0 else body
 
 
+def _bool_from_engine(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.lower() == "true"
+    return None
+
+
+def _flow_key(source_symbol, file_path, line_number):
+    return (source_symbol, file_path, int(line_number or 0))
+
+
+def _engine_flow_metadata(entry: dict | None) -> dict | None:
+    if not entry:
+        return None
+
+    request_controlled = _bool_from_engine(entry.get("requestControlled"))
+    metadata = {
+        "sink_kind": "redirect",
+        "flow_confidence": entry.get("flowConfidence") or "cpg-target-argument",
+    }
+    if request_controlled is not None:
+        metadata["request_controlled"] = request_controlled
+    if entry.get("sourceParam"):
+        metadata["source_param"] = entry.get("sourceParam")
+    if entry.get("sourceKind"):
+        metadata["source_kind"] = entry.get("sourceKind")
+    if entry.get("sinkArgument"):
+        metadata["sink_argument"] = entry.get("sinkArgument")
+    if entry.get("flowSummary"):
+        metadata["flow_summary"] = entry.get("flowSummary")
+    if entry.get("sinkCode"):
+        metadata["sink_code"] = entry.get("sinkCode")
+    return metadata
+
+
+def _merge_flow_metadata(primary: dict, fallback: dict) -> dict:
+    merged = dict(primary)
+    for key in ("source_param", "source_kind", "sink_argument", "flow_summary"):
+        if not merged.get(key) and fallback.get(key):
+            merged[key] = fallback[key]
+    if fallback.get("validation_evidence"):
+        merged["validation_evidence"] = fallback["validation_evidence"]
+    if fallback.get("request_controlled") is True and primary.get("request_controlled") is True:
+        merged.setdefault("fallback_flow_summary", fallback.get("flow_summary"))
+    return merged
+
+
 def _flow_to_sink(body: str, signature: str, sink_code: str, sink_arg: str) -> dict:
     inputs = _request_inputs(signature, body)
     if not sink_arg:
@@ -233,6 +281,24 @@ def enrich_open_redirect_flows(vulnerability, context, state):
         for source in (getattr(state, "sources", None) or [])
         if getattr(source, "symbol", None)
     }
+    engine_flows = {}
+    engine = context.engines.get("dataflow_analyzer") if hasattr(context, "engines") else None
+    flow_resolver = getattr(engine, "find_open_redirect_flows", None)
+    if callable(flow_resolver):
+        try:
+            engine_flows = flow_resolver(
+                context,
+                getattr(state, "traces", None) or [],
+                source_annotations=_REQUEST_ANNOTATIONS,
+                request_accessors=_REQUEST_ACCESSORS,
+            )
+        except Exception:
+            import logging
+            logging.warning(
+                "Open redirect: CPG target-argument flow enrichment failed; falling back",
+                exc_info=True,
+            )
+
     enriched = []
     dropped = 0
 
@@ -246,7 +312,16 @@ def enrich_open_redirect_flows(vulnerability, context, state):
         body = _method_body(context, source)
         signature = getattr(source, "code", "") or ""
         sink_arg = _sink_argument(sink)
-        flow_metadata = _flow_to_sink(body, signature, sink.code, sink_arg)
+        fallback_metadata = _flow_to_sink(body, signature, sink.code, sink_arg)
+        engine_entry = engine_flows.get(
+            _flow_key(trace.source_symbol, trace.sink_file_path, trace.sink_line_number)
+        )
+        engine_metadata = _engine_flow_metadata(engine_entry)
+        flow_metadata = (
+            _merge_flow_metadata(engine_metadata, fallback_metadata)
+            if engine_metadata is not None
+            else fallback_metadata
+        )
         metadata = dict(getattr(sink, "metadata", None) or {})
         metadata.update(flow_metadata)
         enriched_sink = sink.model_copy(update={"metadata": metadata})

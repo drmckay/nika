@@ -1,4 +1,14 @@
-from vulnerabilities.open_redirect import _flow_to_sink, _request_inputs
+from types import SimpleNamespace
+
+from models.sink import Sink
+from models.source import Source
+from models.trace import Trace
+from vulnerabilities.open_redirect import (
+    _flow_to_sink,
+    _flow_key,
+    _request_inputs,
+    enrich_open_redirect_flows,
+)
 
 
 def test_request_inputs_extracts_spring_request_param():
@@ -83,3 +93,89 @@ def test_flow_to_sink_includes_validation_evidence():
     )
 
     assert "startsWith" in metadata["validation_evidence"]
+
+
+def _state_for_engine_flow():
+    source = Source(
+        symbol="com.example.RedirectController.redirect:void(java.lang.String)",
+        file_path="Controller.java",
+        line_number=1,
+        code=(
+            "public void redirect(@RequestParam String next, "
+            "HttpServletResponse response)"
+        ),
+    )
+    sink = Sink(
+        rule_id="java-open-redirect-sinks-servlet",
+        file_path="Controller.java",
+        line_number=10,
+        line_number_end=10,
+        code="response.sendRedirect(next);",
+    )
+    trace = Trace(
+        sink_file_path="Controller.java",
+        sink_line_number=10,
+        source_symbol=source.symbol,
+    )
+    return SimpleNamespace(sources=[source], sinks=[sink], traces=[trace])
+
+
+class _OpenRedirectEngine:
+    def __init__(self, flows):
+        self.flows = flows
+
+    def find_open_redirect_flows(self, *args, **kwargs):
+        return self.flows
+
+
+def test_enrich_open_redirect_flows_drops_engine_negative_even_if_fallback_matches():
+    state = _state_for_engine_flow()
+    key = _flow_key(state.sources[0].symbol, "Controller.java", 10)
+    context = SimpleNamespace(
+        path="",
+        engines={
+            "dataflow_analyzer": _OpenRedirectEngine(
+                {
+                    key: {
+                        "requestControlled": False,
+                        "sinkArgument": "next",
+                        "flowConfidence": "not_request_controlled",
+                    }
+                }
+            )
+        },
+    )
+
+    enrich_open_redirect_flows(None, context, state)
+
+    assert state.traces == []
+
+
+def test_enrich_open_redirect_flows_uses_engine_target_argument_metadata():
+    state = _state_for_engine_flow()
+    key = _flow_key(state.sources[0].symbol, "Controller.java", 10)
+    context = SimpleNamespace(
+        path="",
+        engines={
+            "dataflow_analyzer": _OpenRedirectEngine(
+                {
+                    key: {
+                        "requestControlled": True,
+                        "sinkArgument": "next",
+                        "sourceParam": "next",
+                        "sourceKind": "@RequestParam",
+                        "flowSummary": "next -> response.sendRedirect(next)",
+                        "flowConfidence": "cpg-target-argument",
+                    }
+                }
+            )
+        },
+    )
+
+    enrich_open_redirect_flows(None, context, state)
+
+    assert len(state.traces) == 1
+    metadata = state.traces[0].sink.metadata
+    assert metadata["request_controlled"] is True
+    assert metadata["source_param"] == "next"
+    assert metadata["flow_confidence"] == "cpg-target-argument"

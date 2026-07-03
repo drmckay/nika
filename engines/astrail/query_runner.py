@@ -650,6 +650,78 @@ def execute_once = {{
                     except OSError:
                         pass
 
+    @staticmethod
+    def _encode_open_redirect_pairs(pairs):
+        for source, sink in pairs:
+            yield f"{source.methodName}\t{sink.get('lineNumber', '')}\t{sink.get('file', '')}"
+
+    def run_open_redirect_flow_analysis(
+        self,
+        pairs,
+        source_annotations=None,
+        request_accessors=None,
+    ):
+        pair_values = list(self._encode_open_redirect_pairs(pairs))
+        if not pair_values:
+            return []
+
+        ping_result = self._execute_query_sync("1")
+        if ping_result.get("success") is False:
+            raise AstrailEngineError(
+                "Astrail server is not reachable for open-redirect flow analysis."
+            )
+
+        query_file = self._query_file_path("openRedirectFlow.scala")
+        if not os.path.exists(query_file):
+            raise AstrailEngineError(f"Open-redirect flow query file not found: {query_file}")
+
+        params_tmp = self._write_params_file(
+            {
+                "pair": pair_values,
+                "sourceAnnotation": source_annotations or [],
+                "requestAccessor": request_accessors or [],
+            }
+        )
+        output_tmp = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as handle:
+                output_tmp = handle.name
+
+            with open(query_file, "r", encoding="utf-8") as handle:
+                query_content = handle.read()
+
+            params_escaped = params_tmp.replace("\\", "\\\\")
+            output_escaped = output_tmp.replace("\\", "\\\\")
+            script = query_content + (
+                f'\nfindOpenRedirectFlows("{params_escaped}", "{output_escaped}")'
+            )
+            result = self._execute_query_sync(script, timeout=1800)
+
+            if result.get("success") is False:
+                raise AstrailEngineError(
+                    f"Open-redirect flow query failed: {result.get('error', 'unknown')}"
+                )
+
+            if output_tmp and os.path.exists(output_tmp):
+                with open(output_tmp, "r", encoding="utf-8") as handle:
+                    data = handle.read()
+                if data:
+                    return json.loads(data)
+            return []
+        except AstrailEngineError:
+            raise
+        except Exception as exc:
+            raise AstrailEngineError(
+                f"Error in open-redirect flow analysis: {exc}"
+            ) from exc
+        finally:
+            for tmp in [params_tmp, output_tmp]:
+                if tmp and os.path.exists(tmp):
+                    try:
+                        os.remove(tmp)
+                    except OSError:
+                        pass
+
     def _execute_astrail_script(
         self,
         script_name: str,
