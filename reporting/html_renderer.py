@@ -163,7 +163,7 @@ class HtmlReportRenderer:
         if v.call_graph and len(v.call_graph) > 0:
             for i, node in enumerate(v.call_graph):
                 if i == 0 and len(v.call_graph) == 1:
-                    section_title = "Endpoint Method"
+                    section_title = "Source"
                     line_no = node.callee_line_number
                     if not line_no or line_no < 1:
                         line_no = node.method_line_number_start if node.method_line_number_start and node.method_line_number_start > 0 else 1
@@ -193,14 +193,14 @@ class HtmlReportRenderer:
                 before, target, after, start_line = self._reader.read_segment(v.filename, v.line_number)
                 rendered = self._reader.render_snippet(before, target, after, int(start_line))
                 flow_segments.append(
-                    f'<div class="flow-step-title">Vulnerable Sink ({escape_html(v.filename)}:{v.line_number})</div>{rendered}'
+                    f'<div class="flow-step-title">Sink ({escape_html(v.filename)}:{v.line_number})</div>{rendered}'
                 )
         elif v.filename:
             line_no = v.line_number
             before, target, after, start_line = self._reader.read_segment(v.filename, line_no)
             rendered = self._reader.render_snippet(before, target, after, int(start_line))
             flow_segments.append(
-                f'<div class="flow-step-title">Vulnerable Sink ({escape_html(v.filename)}:{line_no})</div>{rendered}'
+                f'<div class="flow-step-title">Sink ({escape_html(v.filename)}:{line_no})</div>{rendered}'
             )
 
         else:

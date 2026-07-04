@@ -64,6 +64,6 @@ def test_html_trace_renders_explicit_sink_for_single_node_trace(tmp_path):
 
     html = HtmlReportRenderer(CodeSnippetReader(str(tmp_path)))._trace_code_block(vulnerability)
 
-    assert "Endpoint Method (Controller.java:2)" in html
-    assert "Vulnerable Sink (Controller.java:5)" in html
+    assert "Source (Controller.java:2)" in html
+    assert "Sink (Controller.java:5)" in html
     assert "client.execute(request);" in html

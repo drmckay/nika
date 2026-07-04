@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from models.sink import Sink
 from models.source import Source
 from models.trace import Trace
+from vulnerabilities import open_redirect as open_redirect_mod
 from vulnerabilities.open_redirect import (
     _flow_to_sink,
     _flow_key,
@@ -18,6 +19,27 @@ def test_request_inputs_extracts_spring_request_param():
     )
 
     assert _request_inputs(signature, "") == {"next": "@RequestParam"}
+
+
+def test_request_inputs_unions_configured_defaults(monkeypatch):
+    monkeypatch.setattr(
+        open_redirect_mod,
+        "_open_redirect_args",
+        lambda: {
+            "request_accessors": ["param"],
+            "request_annotations": ["CustomParam"],
+        },
+    )
+    signature = (
+        "public void redirect(@CustomParam String direct, "
+        "HttpServletRequest request)"
+    )
+    body = 'String next = request.param("next");'
+
+    inputs = _request_inputs(signature, body)
+
+    assert inputs["direct"] == "@CustomParam"
+    assert inputs["next"] == "request.param"
 
 
 def test_flow_to_sink_marks_direct_request_param_redirect():
@@ -93,6 +115,30 @@ def test_flow_to_sink_includes_validation_evidence():
     )
 
     assert "startsWith" in metadata["validation_evidence"]
+
+
+def test_validation_evidence_unions_configured_terms(monkeypatch):
+    monkeypatch.setattr(
+        open_redirect_mod,
+        "_open_redirect_args",
+        lambda: {"validation_terms": ["approvedRedirectTarget"]},
+    )
+    body = """
+    public void redirect(@RequestParam String next, HttpServletResponse response) {
+        if (!approvedRedirectTarget(next)) {
+            throw new RuntimeException("blocked");
+        }
+        response.sendRedirect(next);
+    }
+    """
+    metadata = _flow_to_sink(
+        body,
+        "public void redirect(@RequestParam String next, HttpServletResponse response)",
+        "response.sendRedirect(next);",
+        "next",
+    )
+
+    assert "approvedRedirectTarget" in metadata["validation_evidence"]
 
 
 def _state_for_engine_flow():

@@ -1,6 +1,8 @@
+import logging
 import os
 import re
 
+from config_provider import ConfigProvider
 from utils.java_ast_parser import extract_method_from_file
 from vulnerabilities.base.base_vulnerability import BaseVulnerability
 from vulnerabilities.base.stages import (
@@ -11,7 +13,7 @@ from vulnerabilities.base.stages import (
     run_dataflow,
 )
 
-_REQUEST_ANNOTATIONS = (
+_DEFAULT_REQUEST_ANNOTATIONS = (
     "RequestParam",
     "PathVariable",
     "RequestHeader",
@@ -23,11 +25,24 @@ _REQUEST_ANNOTATIONS = (
     "FormParam",
 )
 
-_REQUEST_ACCESSORS = (
+_DEFAULT_REQUEST_ACCESSORS = (
     "getParameter",
     "getParameterValues",
     "getHeader",
     "getQueryString",
+)
+
+_DEFAULT_VALIDATION_TERMS = (
+    "allow",
+    "white",
+    "safeRedirect",
+    "isSafe",
+    "startsWith",
+    "UrlUtils",
+    "getHost",
+    "isAbsolute",
+    "URI",
+    "URL",
 )
 
 _BODY_UNAVAILABLE_PREFIXES = (
@@ -36,6 +51,50 @@ _BODY_UNAVAILABLE_PREFIXES = (
     "Access denied",
     "Error extracting",
 )
+
+
+def _open_redirect_args() -> dict:
+    try:
+        return ConfigProvider.get_config().vulnerability_args.get("open_redirect", {}) or {}
+    except Exception:
+        return {}
+
+
+def _configured_values(defaults: tuple[str, ...], *keys: str) -> tuple[str, ...]:
+    values = list(defaults)
+    args = _open_redirect_args()
+    for key in keys:
+        configured = args.get(key)
+        if isinstance(configured, str):
+            configured = [configured]
+        for value in configured or []:
+            if value and value not in values:
+                values.append(str(value))
+    return tuple(values)
+
+
+def _request_annotations() -> tuple[str, ...]:
+    return _configured_values(
+        _DEFAULT_REQUEST_ANNOTATIONS,
+        "request_annotations",
+        "requestAnnotations",
+    )
+
+
+def _request_accessors() -> tuple[str, ...]:
+    return _configured_values(
+        _DEFAULT_REQUEST_ACCESSORS,
+        "request_accessors",
+        "requestAccessors",
+    )
+
+
+def _validation_terms() -> tuple[str, ...]:
+    return _configured_values(
+        _DEFAULT_VALIDATION_TERMS,
+        "validation_terms",
+        "validationTerms",
+    )
 
 
 def _normalize_path(path):
@@ -87,7 +146,7 @@ def _sink_argument(sink) -> str:
 def _request_inputs(signature: str, body: str) -> dict[str, str]:
     text = "\n".join(part for part in (signature, body) if part)
     inputs: dict[str, str] = {}
-    annotations = "|".join(_REQUEST_ANNOTATIONS)
+    annotations = "|".join(re.escape(name) for name in _request_annotations())
     annotation_re = re.compile(
         rf"@(?:[\w.]*\.)?(?P<ann>{annotations})\b(?:\([^)]*\))?\s+"
         r"(?:final\s+)?[\w.$<>\[\]?]+(?:\s*,\s*[\w.$<>\[\]?]+)*\s+"
@@ -103,7 +162,7 @@ def _request_inputs(signature: str, body: str) -> dict[str, str]:
         )
     )
     if request_objs:
-        accessors = "|".join(_REQUEST_ACCESSORS)
+        accessors = "|".join(re.escape(name) for name in _request_accessors())
         req_re = re.compile(
             rf"(?:[\w.$<>\[\]?]+\s+)?(?P<name>\w+)\s*=\s*"
             rf"(?P<obj>{'|'.join(re.escape(obj) for obj in request_objs)})"
@@ -241,18 +300,7 @@ def _validation_evidence(body: str, var: str) -> str:
     if not body or not var:
         return ""
     interesting = []
-    validation_terms = (
-        "allow",
-        "white",
-        "safeRedirect",
-        "isSafe",
-        "startsWith",
-        "UrlUtils",
-        "getHost",
-        "isAbsolute",
-        "URI",
-        "URL",
-    )
+    validation_terms = _validation_terms()
     for raw_line in body.splitlines():
         line = raw_line.strip()
         if _refs_var(line, var) and any(term in line for term in validation_terms):
@@ -289,11 +337,10 @@ def enrich_open_redirect_flows(vulnerability, context, state):
             engine_flows = flow_resolver(
                 context,
                 getattr(state, "traces", None) or [],
-                source_annotations=_REQUEST_ANNOTATIONS,
-                request_accessors=_REQUEST_ACCESSORS,
+                source_annotations=_request_annotations(),
+                request_accessors=_request_accessors(),
             )
         except Exception:
-            import logging
             logging.warning(
                 "Open redirect: CPG target-argument flow enrichment failed; falling back",
                 exc_info=True,
@@ -336,7 +383,6 @@ def enrich_open_redirect_flows(vulnerability, context, state):
 
     state.traces = enriched
     if dropped:
-        import logging
         logging.info("Open redirect: dropped %d non-request-controlled trace(s)", dropped)
     return state
 

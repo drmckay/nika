@@ -1,10 +1,10 @@
+import logging
 import os
 import re
 
 from models.evidence import EvidenceBundle
 from models.finding import Finding
 from vulnerabilities.base.security_agent_reviewer import run_security_agent_review
-import logging
 
 def empty_evidence_bundle() -> EvidenceBundle:
     return EvidenceBundle()
