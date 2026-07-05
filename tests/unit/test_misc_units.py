@@ -109,3 +109,57 @@ def test_java_ast_parser_extracts_constructors_and_fields(tmp_path):
 
     assert "public Assignment7" in constructor
     assert "private final String mailURL" in field
+
+
+def test_java_ast_parser_class_context_includes_field_validation(tmp_path):
+    src = tmp_path / "UserForm.java"
+    src.write_text(
+        "import jakarta.validation.constraints.Pattern;\n"
+        "class UserForm {\n"
+        "  @Pattern(regexp = \"[a-z0-9-]*\")\n"
+        "  private String username;\n"
+        "}\n",
+        encoding="utf-8",
+    )
+
+    context = extract_method_from_file(str(src), "class")
+
+    assert "Class context:" in context
+    assert "@Pattern" in context
+    assert "private String username" in context
+
+
+def test_java_ast_parser_invalid_lookup_includes_class_context(tmp_path):
+    src = tmp_path / "UserForm.java"
+    src.write_text(
+        "class UserForm {\n"
+        "  @Size(min = 6)\n"
+        "  private String username;\n"
+        "}\n",
+        encoding="utf-8",
+    )
+
+    context = extract_method_from_file(str(src), "<init>")
+
+    assert "Class context:" in context
+    assert "@Size" in context
+    assert "private String username" in context
+
+
+def test_java_ast_parser_constructor_signature_selects_overload(tmp_path):
+    src = tmp_path / "User.java"
+    src.write_text(
+        "class User {\n"
+        "  protected User() {}\n"
+        "  public User(String username, String password) {\n"
+        "    this.username = username;\n"
+        "  }\n"
+        "  private String username;\n"
+        "}\n",
+        encoding="utf-8",
+    )
+
+    constructor = extract_method_from_file(str(src), "User(String,String)")
+
+    assert "public User(String username, String password)" in constructor
+    assert "protected User() {}" not in constructor

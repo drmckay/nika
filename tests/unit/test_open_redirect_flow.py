@@ -174,7 +174,7 @@ class _OpenRedirectEngine:
         return self.flows
 
 
-def test_enrich_open_redirect_flows_drops_engine_negative_even_if_fallback_matches():
+def test_enrich_open_redirect_flows_retains_engine_negative_as_evidence():
     state = _state_for_engine_flow()
     key = _flow_key(state.sources[0].symbol, "Controller.java", 10)
     context = SimpleNamespace(
@@ -194,7 +194,11 @@ def test_enrich_open_redirect_flows_drops_engine_negative_even_if_fallback_match
 
     enrich_open_redirect_flows(None, context, state)
 
-    assert state.traces == []
+    assert len(state.traces) == 1
+    metadata = state.traces[0].sink.metadata
+    assert metadata["request_controlled"] is False
+    assert metadata["sink_argument"] == "next"
+    assert metadata["flow_confidence"] == "not_request_controlled"
 
 
 def test_enrich_open_redirect_flows_uses_engine_target_argument_metadata():

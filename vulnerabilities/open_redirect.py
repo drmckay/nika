@@ -347,7 +347,7 @@ def enrich_open_redirect_flows(vulnerability, context, state):
             )
 
     enriched = []
-    dropped = 0
+    non_request_controlled = 0
 
     for trace in getattr(state, "traces", None) or []:
         source = source_lookup.get(getattr(trace, "source_symbol", None))
@@ -374,16 +374,18 @@ def enrich_open_redirect_flows(vulnerability, context, state):
         enriched_sink = sink.model_copy(update={"metadata": metadata})
 
         if flow_metadata.get("request_controlled") is False:
-            dropped += 1
-            continue
+            non_request_controlled += 1
 
         enriched.append(
             trace.model_copy(update={"source": source, "sink": enriched_sink})
         )
 
     state.traces = enriched
-    if dropped:
-        logging.info("Open redirect: dropped %d non-request-controlled trace(s)", dropped)
+    if non_request_controlled:
+        logging.info(
+            "Open redirect: retained %d trace(s) with non-request-controlled evidence",
+            non_request_controlled,
+        )
     return state
 
 
@@ -417,8 +419,10 @@ class OpenRedirectVulnerability(BaseVulnerability):
         "not sufficient if the input can break out of it (e.g. with '//', '\\\\', or "
         "an absolute URL). If the trace evidence already shows a direct request "
         "parameter to redirect/Location flow and no validation evidence, mark it "
-        "VULNERABLE even if an optional tool lookup fails. If the controls are "
-        "unclear, return NEED_MANUAL_REVIEW."
+        "VULNERABLE even if an optional tool lookup fails. If enrichment evidence "
+        "says the redirect target is not request-controlled, treat that as strong "
+        "counterevidence but review the surrounding code before deciding. If the "
+        "controls are unclear, return NEED_MANUAL_REVIEW."
     )
     human_prompt = (
         "Analyze this open redirect trace and decide whether attacker-controlled "

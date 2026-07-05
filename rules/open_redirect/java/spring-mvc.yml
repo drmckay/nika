@@ -17,7 +17,12 @@ rules:
       library_group: "spring-mvc"
     languages:
       - java
-    patterns:
+    mode: taint
+
+    pattern-sources:
+      - pattern: $ANYTHING
+
+    pattern-sinks:
       - pattern-either:
           # ========================================
           # "redirect:" view-name string built from input
